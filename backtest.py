@@ -108,9 +108,14 @@ def simulate(trades, px, days, cap0=CAP0):
 def mdd(e): return float((e / np.maximum.accumulate(e) - 1).min())
 
 
-def main(daily, codes_f, out_f):
+def main(daily, codes_f, out_f, strats=None, pools=None):
+    """strats: {key: (名稱, 訊號函式)}；pools: [(池名, 代號清單, 檔數上限)]，預設前100／前500（10檔）"""
+    global SLOTS
+    strats = strats or STRATS
     d = pd.read_parquet(daily); d["ticker"] = d.ticker.astype(str)
     codes = [x.strip() for x in open(codes_f) if x.strip()]
+    if pools is None:
+        pools = [("top100", codes[:100], SLOTS), ("top500", codes[:500], SLOTS)]
     code_of = d.ticker.str.split(".").str[0]
     px_all = d.pivot_table(index="date", columns="ticker", values="close")
     days = list(px_all.index[START:]); ref0 = px_all["0050.TW"].ffill()
@@ -122,21 +127,31 @@ def main(daily, codes_f, out_f):
                         bench_total=float(b.iloc[-1] / b.iloc[0] - 1),
                         bench_cagr=float((b.iloc[-1] / b.iloc[0]) ** (1 / span) - 1),
                         bench_mdd=mdd(b_eq), bench_year=bench_year),
-           "strats": {k: v[0] for k, v in STRATS.items()}, "runs": []}
-    for topn in (100, 500):
-        pool = set(codes[:topn]); sub = d[code_of.isin(pool)]
+           "strats": {k: v[0] for k, v in strats.items()}, "pools": [p[0] for p in pools], "runs": []}
+    sigcache = {}
+    base_slots = SLOTS
+    for pname, pcodes, slots in pools:
+        SLOTS = slots
+        pool = set(pcodes); sub = d[code_of.isin(pool)]
         px = px_all[[t for t in px_all.columns if t.split(".")[0] in pool]].ffill()
         groups = {t: g.sort_values("date").reset_index(drop=True) for t, g in sub.groupby("ticker", sort=False)}
-        for sk, (_, fn) in STRATS.items():
+        for sk, (_, fn) in strats.items():
             for buyable in (False, True):
                 raw = []
                 for t, g in groups.items():
-                    r = ref0.reindex(g.date).ffill().values.astype(float)
-                    raw += gen_trades(g, fn, r, buyable)
+                    key = (sk, t)
+                    if key not in sigcache:
+                        r = ref0.reindex(g.date).ffill().values.astype(float)
+                        o, h, l, c, v = (g[k].values.astype(float) for k in ("open", "high", "low", "close", "volume"))
+                        with np.errstate(all="ignore"):
+                            sigcache[key] = np.nan_to_num(fn(o, h, l, c, v, r), nan=False).astype(bool)
+                    raw += gen_trades(g, lambda *a, s=sigcache[key]: s, None, buyable)
                 last = days[-1]; tl = []
                 for (t, e, x, ep, xp) in raw:
                     if x is None: x = last; xp = px.at[last, t]
                     tl.append(dict(ticker=t, entry=pd.Timestamp(e), exit=pd.Timestamp(x), ep=float(ep), xp=float(xp)))
+                if not tl:
+                    continue
                 rets = np.array([tr["xp"] / tr["ep"] - 1 - COST for tr in tl])
                 hold = np.array([(tr["exit"] - tr["entry"]).days for tr in tl])
                 w = rets[rets > 0]; lo = rets[rets <= 0]
@@ -152,17 +167,19 @@ def main(daily, codes_f, out_f):
                             ty.append(tr2)
                     e2, _ = simulate(ty, px, yd)
                     yearly.append(dict(year=y, ret=float(e2[-1] / CAP0 - 1), bench=bench_year[str(y)], n=len(ty)))
-                run = dict(strat=sk, topn=topn, buyable=buyable, n=len(tl), win=float(len(w) / len(rets)),
-                           avg=float(rets.mean()), med=float(np.median(rets)), odds=float(w.mean() / -lo.mean()),
-                           hold=float(hold.mean()), avg_ex5=float(np.sort(rets)[:-5].mean()), taken=taken,
-                           final=float(eq[-1]), cagr=float((eq[-1] / CAP0) ** (1 / span) - 1), mdd=mdd(eq),
+                run = dict(strat=sk, pool=pname, buyable=buyable, n=len(tl), win=float(len(w) / len(rets)),
+                           avg=float(rets.mean()), med=float(np.median(rets)),
+                           odds=float(w.mean() / -lo.mean()) if len(lo) and len(w) else 0.0,
+                           hold=float(hold.mean()), avg_ex5=float(np.sort(rets)[:-5].mean()) if len(rets) > 5 else float(rets.mean()),
+                           taken=taken, final=float(eq[-1]), cagr=float((eq[-1] / CAP0) ** (1 / span) - 1), mdd=mdd(eq),
                            yearly=yearly, yr_avg=float(np.mean([y["ret"] for y in yearly])),
                            yr_loss=int(sum(y["ret"] < 0 for y in yearly)),
                            yr_beat=int(sum(y["ret"] > y["bench"] for y in yearly)),
                            curve=[[str(days[i].date()), round(float(eq[i]))] for i in range(0, len(days), 5)]
                                  + [[str(days[-1].date()), round(float(eq[-1]))]])
                 res["runs"].append(run)
-                print(sk, topn, "買得到" if buyable else "一般", len(tl), f"CAGR {run['cagr']:.1%} MDD {run['mdd']:.1%}", flush=True)
+                print(sk, pname, "buyable" if buyable else "normal", len(tl), f"CAGR {run['cagr']:.1%} MDD {run['mdd']:.1%}", flush=True)
+    SLOTS = base_slots
     res["bench_curve"] = ([[str(days[i].date()), round(float(b_eq[i]))] for i in range(0, len(days), 5)]
                           + [[str(days[-1].date()), round(float(b_eq[-1]))]])
     json.dump(res, open(out_f, "w", encoding="utf-8"), ensure_ascii=False)

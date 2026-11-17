@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>三條件選股策略回測｜一般版 vs 買得到版 vs 0050</title>
-<meta name="description" content="網友分享的 MACD＋布林＋月線三條件策略，與兩個類似策略，在台股市值前 100／前 500 的回測，並與同期 0050 對照。">
+<title>台股選股策略回測｜三條件與頸線</title>
+<meta name="description" content="三條件選股（MACD＋布林＋月線）與三種頸線策略，在台股市值前 100／前 500 與 0050 的回測：一般版 vs 買得到版 vs 同期 0050。">
 <style>
 :root{--bg:#f7f6f2;--card:#fff;--ink:#23262b;--mute:#6b7280;--line:#e4e2da;--c1:#2563a8;--c2:#c2562b;--c3:#2f8a5b;--bench:#8a8f98;--good:#1f7a4d;--bad:#b3392b}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--card:#1d2024;--ink:#e8e9ec;--mute:#9aa0aa;--line:#2f3338;--c1:#6aa3e8;--c2:#f08a5d;--c3:#5fc28d;--bench:#a0a6b0;--good:#5fc28d;--bad:#f0806f}}
@@ -19,11 +19,12 @@ p{margin:.5em 0}.mute{color:var(--mute);font-size:.9rem}
 .tag{display:inline-block;font-size:.78rem;padding:1px 8px;border-radius:99px;color:#fff;margin-right:6px}
 .t1{background:var(--c1)}.t2{background:var(--c2)}.t3{background:var(--c3)}
 .sum{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:14px}
-.sum .k{font-size:.85rem;color:var(--mute)}.sum .v{font-size:1.6rem;font-weight:700}
+.sum .k{font-size:.85rem;color:var(--mute)}.sum .v{font-size:1.15rem;font-weight:700}
 .ctl{display:flex;flex-wrap:wrap;gap:8px 18px;margin:10px 0}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;background:var(--card);color:var(--ink);padding:6px 14px;font:inherit;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--c1);color:#fff}
+.tabs{margin:14px 0 4px}.tabs .seg button{padding:9px 20px;font-weight:600}
 .chart{position:relative;height:340px}
 .scroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
@@ -33,34 +34,33 @@ th{font-weight:600;color:var(--mute);font-size:.84rem}
 .pos{color:var(--good)}.neg{color:var(--bad)}
 .warn{border-left:4px solid var(--c2);background:var(--card);padding:10px 16px;border-radius:0 8px 8px 0;margin:10px 0}
 ul{padding-left:1.2em}li{margin:.25em 0}
-code{background:var(--line);padding:1px 6px;border-radius:4px;font-size:.88em}
 a{color:var(--c1)}
+.set{display:none}.set.on{display:block}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>三條件選股策略回測</h1>
-<p class="mute">一般版（理想成交）vs 買得到版（隔日開盤成交）vs 同期 0050｜資料 <span id="period"></span>｜僅供研究，非投資建議</p>
+<h1>台股選股策略回測</h1>
+<p class="mute">每組策略都做「一般版（理想成交）」與「買得到版（隔日開盤成交）」，並與同期 0050 買進持有對照｜僅供研究，非投資建議</p>
+<div class="tabs"><span class="seg" id="segSet"></span></div>
 
-<div class="card" style="margin-top:14px">
+<!-- ===================== 三條件策略 ===================== -->
+<section class="set" id="set-three">
+<div class="card" style="margin-top:10px">
 <p><b>起因：</b>網友分享「MACD 柱狀體翻正、布林通道開口放大、站上向上的 20 日線」三條件同時成立才進場，自稱 15 萬做到 500 萬。我們照貼文條件與他說的出場（<b>跌破 20 日線、3 日站不回</b>）實測，再找兩個同型的「三條件」策略對照。</p>
-<div class="sum" id="sum"></div>
+<p class="mute">資料 <span class="period"></span></p>
+<div class="sum"></div>
 </div>
 
 <h2>回測結果</h2>
-<div class="ctl">
-  <div><span class="mute">股票池　</span><span class="seg" id="segPool"></span></div>
-  <div><span class="mute">成交假設　</span><span class="seg" id="segVer"></span></div>
-</div>
-<div class="card">
-  <div class="chart"><canvas id="cv"></canvas></div>
-  <p class="mute">起始資金 15 萬、逐日以收盤價計價；縱軸為對數刻度。0050 為同一天起點的買進持有（還原價，含息）。</p>
-</div>
-<div class="card scroll" style="margin-top:12px"><table id="tbl"></table></div>
+<div class="ctl"><div><span class="mute">股票池　</span><span class="seg segPool"></span></div><div><span class="mute">成交假設　</span><span class="seg segVer"></span></div></div>
+<div class="card"><div class="chart"><canvas class="cv"></canvas></div>
+<p class="mute">起始資金 15 萬、逐日以收盤價計價；縱軸為對數刻度。0050 為同一天起點的買進持有（還原價，含息）。</p></div>
+<div class="card scroll" style="margin-top:12px"><table class="tbl"></table></div>
 
 <h2>每年重新來（每年 1/1 重置為 15 萬）</h2>
-<p class="mute">只看當年度的表現：年初從 15 萬開始、只做當年進場的訊號、年底沒出場的部位以年底收盤結算。第一年（2015）從 7/22 起，不是完整年度；2026 到 11/13。</p>
-<div class="card scroll"><table id="yr"></table></div>
+<p class="mute">只看當年度的表現：年初從 15 萬開始、只做當年進場的訊號、年底沒出場的部位以年底收盤結算。第一年（2015）從 7/22 起，不是完整年度；2026 到 11/13。粗體＝贏過 0050。</p>
+<div class="card scroll"><table class="yr"></table></div>
 
 <h2>三個策略</h2>
 <div class="grid">
@@ -81,7 +81,7 @@ a{color:var(--c1)}
 <li><b>一般版：</b>訊號當天收盤價進場、第 3 個破線日收盤價出場。看起來漂亮，但實務上收盤後才知道訊號，買不到那個價格。</li>
 <li><b>買得到版：</b>訊號隔天開盤價進場；出場訊號隔天開盤價出場。這才是收盤後選股、隔天下單能拿到的成交。</li>
 <li><b>成本：</b>往返 0.585%（手續費 0.1425%×2＋證交稅 0.3%），進出各負擔一半；未計滑價。</li>
-<li><b>資金：</b>15 萬、最多 10 檔等權，滿檔就跳過新訊號；同一天訊號太多時依股票代號排序取用（沒有挑選優劣，單純的固定規則）。同一檔持有中不重複進場。</li>
+<li><b>資金：</b>15 萬、最多 10 檔等權，滿檔就跳過新訊號；同一天訊號太多時依股票代號排序取用（固定規則，沒有挑選優劣）。同一檔持有中不重複進場。</li>
 <li><b>流動性：</b>訊號日成交量 ≥ 500 張。</li>
 <li><b>股票池：</b>以目前市值排名的前 100／前 500（排除 ETF、已下市與特殊註記），價格為還原價。</li>
 <li><b>對照：</b>0050 還原價買進持有，起點與策略相同（2015-07-22）。</li>
@@ -91,69 +91,124 @@ a{color:var(--c1)}
 <div class="warn"><b>存活者偏差：</b>股票池是用「今天」的市值排名挑的，等於事先知道哪些股票後來變大了。這對偏好強勢股的策略（尤其 S3）特別有利，實際績效會比表上低。把 S3 的亮眼數字當成上限，不要當成預期。</div>
 <div class="warn"><b>少數大贏家：</b>三個策略的勝率都只有約 4 成，靠少數大漲的單筆撐起期望值（表中「去掉前 5 大」欄可看一斑）。要承受連續小賠。</div>
 <div class="warn"><b>回撤很深：</b>多數組合最大回撤在 −30%～−40%，與 0050 相當甚至更大。沒有「風險更低」的證據。</div>
-<div class="warn"><b>樣本是一段多頭：</b>2015–2026 台股大致往上，且 2025–2026 AI 行情特別強；這段表現不保證未來。回測沒有做樣本外檢驗或參數最佳化，也沒有調參。</div>
+<div class="warn"><b>樣本是一段多頭：</b>2015–2026 台股大致往上，且 2025–2026 AI 行情特別強；這段表現不保證未來。沒有做樣本外檢驗，也沒有調參。</div>
 <div class="warn"><b>脆友的「15 萬到 500 萬」</b>在這個設定下沒有重現：S1 在買得到版 11 年多約 10～13 倍，且期間 0050 本身也約 8.6 倍。</div>
+</section>
 
-<p class="mute" style="margin-top:2em">資料：價格取自公開行情（證交所／櫃買）整理的還原日線，本網站只公布回測結果，不提供原始價格。程式與方法見 <a href="https://github.com/tongxiaooppo-boop/tw-three-condition-backtest">GitHub repo</a>（backtest.py）。MIT License。</p>
+<!-- ===================== 頸線策略 ===================== -->
+<section class="set" id="set-neck">
+<div class="card" style="margin-top:10px">
+<p><b>起因：</b>有人提到「最低點 ×2 是頸線，當訊號」。我們查不到這個算法的出處（標準頸線是兩個底之間的反彈高點），所以沒有照字面測，改測三種公認的頸線型態：<b>W 底、頭肩底、底底高突破前波高</b>。每個都在「收盤首次突破頸線且放量」時進場。另外把 <b>0050 本身也當標的</b>，看頸線訊號用在大盤（ETF）還是個股比較有用。</p>
+<p class="mute">資料 <span class="period"></span></p>
+<div class="sum"></div>
+</div>
+
+<h2>回測結果</h2>
+<div class="ctl"><div><span class="mute">標的／股票池　</span><span class="seg segPool"></span></div><div><span class="mute">成交假設　</span><span class="seg segVer"></span></div></div>
+<div class="card"><div class="chart"><canvas class="cv"></canvas></div>
+<p class="mute">起始資金 15 萬、逐日以收盤價計價；縱軸為對數刻度。0050 為同一天起點的買進持有（還原價，含息）。選「0050 單一標的」時，策略只交易 0050、全倉、一次一筆；沒訊號時空手，所以曲線貼近水平。</p></div>
+<div class="card scroll" style="margin-top:12px"><table class="tbl"></table></div>
+
+<h2>每年重新來（每年 1/1 重置為 15 萬）</h2>
+<p class="mute">與三條件那組相同：年初 15 萬、只做當年進場的訊號、年底未出場者以年底收盤結算。粗體＝贏過 0050。</p>
+<div class="card scroll"><table class="yr"></table></div>
+
+<h2>三種頸線策略</h2>
+<div class="grid">
+<div class="card"><span class="tag t1">N1</span><b>W 底（雙重底）突破頸線</b>
+<ul><li>兩個波谷相距 15～60 根 K 棒，高低差 ≤ 5%</li><li>頸線＝兩谷之間最高價，且比谷底高 8% 以上</li><li>收盤首次突破頸線，量 ≥ 20 日均量 × 1.5；右谷後沒再破谷底 2%</li></ul>
+<p class="mute">來源：W 底的常見判讀——突破頸線要帶量，見 <a href="https://www.pocket.tw/school/articles/4310/">口袋學堂</a>、<a href="https://www.cmoney.tw/notes/note-detail.aspx?nid=893325">CMoney 筆記</a>。</p></div>
+<div class="card"><span class="tag t2">N2</span><b>頭肩底突破頸線</b>
+<ul><li>三個連續波谷，中間（頭）比兩肩低至少 3%，兩肩高低差 ≤ 10%</li><li>頸線＝左右兩段反彈高點中較高者（水平頸線）</li><li>收盤首次突破頸線，量 ≥ 20 日均量 × 1.5；頭部低點之後沒有再被跌破</li></ul>
+<p class="mute">來源：技術分析的標準頭肩底型態；參數是我們依常見說法設定，沒有最佳化。</p></div>
+<div class="card"><span class="tag t3">N3</span><b>底底高＋突破前波高</b>
+<ul><li>最近兩個波谷抬高 ≥ 2%，相距 ≥ 10 根</li><li>頸線＝第一個谷起算的最高價</li><li>收盤首次突破頸線，量 ≥ 20 日均量 × 1.2</li></ul>
+<p class="mute">來源：道氏理論的「底底高、突破前高」轉強訊號，是三者中型態最寬鬆的。</p></div>
+</div>
+
+<h2>回測作法（與三條件那組相同，另加）</h2>
+<ul>
+<li><b>轉折點（波谷）：</b>某根最低價是它左右各 5 根之中的最小值才算波谷，而且要等右邊 5 根收完才「確認」。訊號只用當時已確認的波谷，沒有偷看未來。</li>
+<li><b>共同出場：</b>連續 3 日收盤低於 20MA（為了與三條件那組可比，沒有改用頸線停損）。</li>
+<li><b>一般版／買得到版：</b>訊號日收盤進 vs 隔日開盤進；出場同理。成本往返 0.585%。</li>
+<li><b>股票池：</b>市值前 100、前 500（10 檔等權）；另有「0050 單一標的」（全倉、一次一筆）。</li>
+<li><b>對照：</b>0050 還原價買進持有，起點 2015-07-22。</li>
+</ul>
+
+<h2>要小心的地方</h2>
+<div class="warn"><b>0050 上訊號很少：</b>頸線型態在 0050 十一年只出現 W 底 1 次、頭肩底 0 次、底底高 19 次。樣本太少，數字不能用來下結論；但至少說明這類型態更像是個股的訊號，不是大盤的。</div>
+<div class="warn"><b>「資金閒置」讓 W 底、頭肩底的組合報酬偏低：</b>它們每筆平均賺得多（+3%～+6%），但訊號稀少，大部分時間在空手，所以整體年化不如訊號多的 N3。看「平均每筆」與「年化」要一起看。</div>
+<div class="warn"><b>存活者偏差、少數大贏家、單一多頭樣本：</b>與三條件那組相同，見該組說明。型態的參數（5%、8%、1.5 倍…）是我們先設定的，沒有調參，但也沒有做樣本外檢驗。</div>
+<div class="warn"><b>「最低點 ×2」查無出處：</b>沒有照字面測。若你知道原文出處，可以再補測。</div>
+</section>
+
+<p class="mute" style="margin-top:2em">資料：價格取自公開行情（證交所／櫃買）整理的還原日線，本網站只公布回測結果，不提供原始價格。程式與方法見 <a href="https://github.com/tongxiaooppo-boop/tw-three-condition-backtest">GitHub repo</a>（backtest.py、neckline.py）。MIT License。</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const R = /*DATA*/;
-const $ = id => document.getElementById(id);
+const SETS = {three: /*DATA3*/, neck: /*DATANECK*/};
+const SET_LABEL = {three: '三條件策略', neck: '頸線策略'};
+const POOL_LABEL = {top100: '市值前 100', top500: '市值前 500', etf0050: '0050 單一標的'};
 const pct = (x, d=1) => (x*100).toFixed(d) + '%';
 const cls = x => x >= 0 ? 'pos' : 'neg';
 const money = x => Math.round(x/10000).toLocaleString() + ' 萬';
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const colors = () => ({S1: css('--c1'), S2: css('--c2'), S3: css('--c3'), B: css('--bench')});
-let pool = 500, buy = true, chart;
-const M = R.meta;
-$('period').textContent = M.start + ' ～ ' + M.end;
+const state = {};
+for (const k in SETS) state[k] = {pool: SETS[k].pools.includes('top500') ? 'top500' : SETS[k].pools[0], buy: true, chart: null};
+let cur = (location.hash || '').replace('#', '') in SETS ? location.hash.slice(1) : 'three';
 
-function seg(el, opts, get, set) {
+function seg(el, opts, get, set, after) {
   el.innerHTML = '';
   opts.forEach(([val, label]) => {
     const b = document.createElement('button'); b.textContent = label;
     b.setAttribute('aria-pressed', String(get() === val));
-    b.onclick = () => { set(val); render(); };
+    b.onclick = () => { set(val); after(); };
     el.appendChild(b);
   });
 }
-const runs = () => R.runs.filter(r => r.topn === pool && r.buyable === buy);
+const sname = (R, k) => `${k} ${R.strats[k].split(/[：（＋]/)[0]}`;
 
 function render() {
-  seg($('segPool'), [[100, '市值前 100'], [500, '市值前 500']], () => pool, v => pool = v);
-  seg($('segVer'), [[false, '一般版（收盤價成交）'], [true, '買得到版（隔日開盤）']], () => buy, v => buy = v);
-  const rs = runs(), c = colors();
-  // 摘要
-  const best = rs.reduce((a, b) => a.cagr > b.cagr ? a : b);
-  $('sum').innerHTML = [
+  seg(document.getElementById('segSet'), Object.keys(SETS).map(k => [k, SET_LABEL[k]]), () => cur, v => { cur = v; history.replaceState(null, '', '#' + v); }, render);
+  for (const k in SETS) document.getElementById('set-' + k).classList.toggle('on', k === cur);
+  const R = SETS[cur], st = state[cur], M = R.meta, root = document.getElementById('set-' + cur);
+  const q = c => root.querySelector('.' + c);
+  q('period').textContent = M.start + ' ～ ' + M.end;
+  seg(q('segPool'), R.pools.map(p => [p, POOL_LABEL[p]]), () => st.pool, v => st.pool = v, render);
+  seg(q('segVer'), [[false, '一般版（收盤價成交）'], [true, '買得到版（隔日開盤）']], () => st.buy, v => st.buy = v, render);
+  const keys = Object.keys(R.strats), colors = ['--c1', '--c2', '--c3'].map(css), bcol = css('--bench');
+  const rs = R.runs.filter(r => r.pool === st.pool && r.buyable === st.buy);
+  const by = Object.fromEntries(rs.map(r => [r.strat, r]));
+  const best = rs.length ? rs.reduce((a, b) => a.cagr > b.cagr ? a : b) : null;
+  q('sum').innerHTML = [
     ['0050 同期買進持有', `${pct(M.bench_total, 0)}　年化 ${pct(M.bench_cagr)}`],
-    ['最大回撤（0050）', pct(M.bench_mdd, 0)],
-    [`本組最高：${best.strat} 年化`, `${pct(best.cagr)}　(${money(best.final)})`],
-    ['本組策略贏 0050 的年數', rs.map(r => `${r.strat} ${r.yr_beat}/${r.yearly.length}`).join('　')]
-  ].map(([k, v]) => `<div><div class="k">${k}</div><div class="v" style="font-size:1.15rem">${v}</div></div>`).join('');
-  // 曲線
-  const ds = rs.map(r => ({label: `${r.strat} ${R.strats[r.strat].split('：')[0]}`, data: r.curve.map(p => ({x: p[0], y: p[1]})),
-    borderColor: c[r.strat], backgroundColor: c[r.strat], borderWidth: 2, pointRadius: 0}));
-  ds.push({label: '0050 買進持有', data: R.bench_curve.map(p => ({x: p[0], y: p[1]})), borderColor: c.B, backgroundColor: c.B,
+    ['0050 最大回撤', pct(M.bench_mdd, 0)],
+    best ? [`本組最高：${best.strat} 年化`, `${pct(best.cagr)}　(${money(best.final)})`] : ['本組最高', '—'],
+    ['贏 0050 的年數', keys.map(k => by[k] ? `${k} ${by[k].yr_beat}/${by[k].yearly.length}` : `${k} 無訊號`).join('　')]
+  ].map(([k, v]) => `<div><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const ds = keys.filter(k => by[k]).map(k => ({label: sname(R, k), data: by[k].curve.map(p => ({x: p[0], y: p[1]})),
+    borderColor: colors[keys.indexOf(k)], backgroundColor: colors[keys.indexOf(k)], borderWidth: 2, pointRadius: 0}));
+  ds.push({label: '0050 買進持有', data: R.bench_curve.map(p => ({x: p[0], y: p[1]})), borderColor: bcol, backgroundColor: bcol,
     borderWidth: 2, borderDash: [6, 4], pointRadius: 0});
-  if (chart) chart.destroy();
-  chart = new Chart($('cv'), {type: 'line', data: {datasets: ds}, options: {
+  if (st.chart) st.chart.destroy();
+  const ticks = [10,15,20,30,50,100,150,200,300,500,1000];
+  st.chart = new Chart(q('cv'), {type: 'line', data: {datasets: ds}, options: {
     responsive: true, maintainAspectRatio: false, parsing: false, animation: false, interaction: {mode: 'index', intersect: false},
     scales: {x: {type: 'category', labels: R.bench_curve.map(p => p[0]), ticks: {maxTicksLimit: 8, color: css('--mute')}, grid: {display: false}},
-      y: {type: 'logarithmic', ticks: {color: css('--mute'), callback: v => [10,15,20,30,50,100,150,200,300,500].includes(Math.round(v/10000)) && Math.abs(v/10000-Math.round(v/10000))<1e-6*v ? Math.round(v/10000) + '萬' : ''}, grid: {color: css('--line')}}},
+      y: {type: 'logarithmic', ticks: {color: css('--mute'), callback: v => { const w = v/10000; return ticks.includes(Math.round(w)) && Math.abs(w - Math.round(w)) < 1e-6*w ? Math.round(w) + '萬' : ''; }}, grid: {color: css('--line')}}},
     plugins: {legend: {labels: {color: css('--ink')}}, tooltip: {callbacks: {label: i => `${i.dataset.label}: ${money(i.parsed.y)}`}}}}});
-  // 統計表
-  $('tbl').innerHTML = `<tr><th>策略</th><th>交易筆數</th><th>勝率</th><th>平均每筆</th><th>賠率</th><th>去掉前5大後平均</th><th>平均持有(天)</th><th>終值（15萬起）</th><th>年化</th><th>最大回撤</th></tr>` +
-    rs.map(r => `<tr><td>${r.strat} ${R.strats[r.strat].split('：')[0]}</td><td>${r.n.toLocaleString()}</td><td>${pct(r.win, 0)}</td><td class="${cls(r.avg)}">${pct(r.avg, 2)}</td><td>${r.odds.toFixed(2)}</td><td class="${cls(r.avg_ex5)}">${pct(r.avg_ex5, 2)}</td><td>${r.hold.toFixed(0)}</td><td>${money(r.final)}</td><td class="${cls(r.cagr)}">${pct(r.cagr)}</td><td class="neg">${pct(r.mdd, 0)}</td></tr>`).join('') +
+  q('tbl').innerHTML = `<tr><th>策略</th><th>交易筆數</th><th>勝率</th><th>平均每筆</th><th>賠率</th><th>去掉前5大後平均</th><th>平均持有(天)</th><th>終值（15萬起）</th><th>年化</th><th>最大回撤</th></tr>` +
+    keys.map(k => { const r = by[k]; if (!r) return `<tr><td>${sname(R, k)}</td><td colspan="9" style="text-align:left" class="mute">十一年內沒有出現訊號</td></tr>`;
+      const thin = r.n < 20 ? ' <span class="mute">（樣本太少）</span>' : '';
+      return `<tr><td>${sname(R, k)}${thin}</td><td>${r.n.toLocaleString()}</td><td>${pct(r.win, 0)}</td><td class="${cls(r.avg)}">${pct(r.avg, 2)}</td><td>${r.odds.toFixed(2)}</td><td class="${cls(r.avg_ex5)}">${pct(r.avg_ex5, 2)}</td><td>${r.hold.toFixed(0)}</td><td>${money(r.final)}</td><td class="${cls(r.cagr)}">${pct(r.cagr)}</td><td class="neg">${pct(r.mdd, 0)}</td></tr>`; }).join('') +
     `<tr><td>0050 買進持有</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>${money(150000*(1+M.bench_total))}</td><td class="${cls(M.bench_cagr)}">${pct(M.bench_cagr)}</td><td class="neg">${pct(M.bench_mdd, 0)}</td></tr>`;
-  // 逐年
-  const yrs = rs[0].yearly;
-  $('yr').innerHTML = `<tr><th>年度</th>${rs.map(r => `<th>${r.strat}</th>`).join('')}<th>0050</th></tr>` +
-    yrs.map((y, i) => `<tr><td>${y.year}</td>${rs.map(r => { const v = r.yearly[i]; return `<td class="${cls(v.ret)}" style="${v.ret > v.bench ? 'font-weight:700' : ''}">${pct(v.ret)}</td>`; }).join('')}<td class="${cls(y.bench)}">${pct(y.bench)}</td></tr>`).join('') +
-    `<tr><td><b>平均</b></td>${rs.map(r => `<td class="${cls(r.yr_avg)}"><b>${pct(r.yr_avg)}</b></td>`).join('')}<td><b>${pct(yrs.reduce((a, y) => a + y.bench, 0) / yrs.length)}</b></td></tr>` +
-    `<tr><td>虧損年數</td>${rs.map(r => `<td>${r.yr_loss}/${yrs.length}</td>`).join('')}<td>${yrs.filter(y => y.bench < 0).length}/${yrs.length}</td></tr>`;
+  const yrs = Object.keys(M.bench_year).map(y => ({year: +y, bench: M.bench_year[y]}));
+  const shown = keys.filter(k => by[k]);
+  q('yr').innerHTML = `<tr><th>年度</th>${shown.map(k => `<th>${k}</th>`).join('')}<th>0050</th></tr>` +
+    yrs.map((y, i) => `<tr><td>${y.year}</td>${shown.map(k => { const v = by[k].yearly[i]; return `<td class="${cls(v.ret)}" style="${v.ret > v.bench ? 'font-weight:700' : ''}">${pct(v.ret)}</td>`; }).join('')}<td class="${cls(y.bench)}">${pct(y.bench)}</td></tr>`).join('') +
+    `<tr><td><b>平均</b></td>${shown.map(k => `<td class="${cls(by[k].yr_avg)}"><b>${pct(by[k].yr_avg)}</b></td>`).join('')}<td><b>${pct(yrs.reduce((a, y) => a + y.bench, 0) / yrs.length)}</b></td></tr>` +
+    `<tr><td>虧損年數</td>${shown.map(k => `<td>${by[k].yr_loss}/${yrs.length}</td>`).join('')}<td>${yrs.filter(y => y.bench < 0).length}/${yrs.length}</td></tr>`;
 }
 render();
 </script>
